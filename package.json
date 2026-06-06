@@ -1,0 +1,48 @@
+{
+  "name": "claude-code-monitor",
+  "version": "1.0.0",
+  "description": "Desktop widget for monitoring Claude Code events",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "setup-hooks": "node setup-hooks.js",
+    "build": "electron-builder --win",
+    "build:dir": "electron-builder --win --dir"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.claude-code-monitor.app",
+    "productName": "Claude Code Monitor",
+    "asar": false,
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Claude Code Monitor"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "hook.js",
+      "focus-window.ps1",
+      "setup-hooks.js",
+      "src/**/*",
+      "package.json",
+      "!docs/**"
+    ]
+  }
+}

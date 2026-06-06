@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Claude Code Monitor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="titlebar">
+    <span class="title">Claude Code Monitor</span>
+    <div class="controls">
+      <button class="btn-minimize" id="btn-hide">&mdash;</button>
+      <button class="btn-close" id="btn-close">&#10005;</button>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span class="status-dot"></span>
+    <span class="status-text" id="status-text">就绪 · 等待事件</span>
+  </div>
+
+  <div class="events-container" id="events">
+    <div class="empty-state">
+      <div class="empty-icon">📡</div>
+      <p>等待 Claude Code 事件...</p>
+      <p class="hint">启动 Claude Code 后，事件会自动出现在这里</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn-clear" id="btn-clear">清除记录</button>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
