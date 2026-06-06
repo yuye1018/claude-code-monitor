@@ -40,9 +40,12 @@
       "hook.js",
       "focus-window.ps1",
       "setup-hooks.js",
+      "assets/**/*",
       "src/**/*",
       "package.json",
-      "!docs/**"
+      "!docs/**",
+      "!**/README.md",
+      "!**/CLAUDE.md"
     ]
   }
 }
