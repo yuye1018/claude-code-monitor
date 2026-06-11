@@ -97,12 +97,8 @@ async function main() {
     await sendEvent(body);
   }
 
-  // On Stop event, shut down the monitor after a short delay
-  if (eventType === 'Stop') {
-    await sleep(3000);
-    requestShutdown();
-    await sleep(1000);
-  }
+  // Note: Monitor now stays running and manages its own idle timeout
+  // Removed auto-shutdown on Stop event to keep tray icon available
 
   process.exit(0);
 }
