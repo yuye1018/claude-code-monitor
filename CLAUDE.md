@@ -37,7 +37,7 @@ Claude Code hooks (settings.json)
 
 **src/index.html** — 主窗口 HTML，360x480 无边框置顶窗口。
 
-**focus-window.ps1** — PowerShell 脚本，沿进程树向上查找有窗口的进程并置顶。添加最大迭代次数限制（20 次）防止无限循环。用 `IsZoomed` 保留最大化状态（最大化用 `SW_SHOWMAXIMIZED`，否则用 `SW_RESTORE`）。回退逻辑尝试所有终端进程。
+**focus-window.ps1** — PowerShell 脚本，沿进程树向上查找有窗口的进程并置顶。添加最大迭代次数限制（20 次）防止无限循环。用 `IsZoomed` 保留最大化状态（最大化用 `SW_SHOWMAXIMIZED`，否则用 `SW_RESTORE`）。回退逻辑尝试所有终端进程。注意：脚本使用纯英文编写，避免 PowerShell 解析问题。
 
 **setup-hooks.js** — 向 `~/.claude/settings.json` 写入 hook 条目，检测已有条目避免重复。
 
@@ -77,6 +77,7 @@ Claude Code hooks (settings.json)
 - 使用 permission_prompt 事件判断弹窗，不依赖时间延迟
 - 支持多终端场景，通过会话标识符区分不同终端
 - 焦点窗口脚本添加最大迭代次数限制，防止无限循环
+- **PowerShell 脚本（focus-window.ps1）必须使用纯英文**，避免解析问题
 
 ## 约束
 
@@ -85,5 +86,5 @@ Claude Code hooks (settings.json)
 - 窗口：360x480、无边框、置顶、主显示器右下角
 - 托盘图标从 `assets/tray-icon.png` 加载（Claude Logo + 绿色状态点，透明背景）
 - hook.js 依赖 `node` 命令可用
-- focus-window.ps1 依赖 Windows PowerShell
+- focus-window.ps1 依赖 Windows PowerShell，脚本必须使用纯英文（避免解析问题）
 - 仅支持 Windows
