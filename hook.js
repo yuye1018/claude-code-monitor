@@ -81,29 +81,29 @@ async function main() {
     body = JSON.stringify({ event: eventType, raw: data, _ppid: process.ppid });
   }
 
-  // Check if monitor is running, start if not
+  // 检查监控器是否在运行，如果没有则启动
   let alive = await ping();
   if (!alive) {
     startMonitor();
-    // Wait for Electron to boot and server to be ready
+    // 等待 Electron 启动并准备好服务器
     for (let i = 0; i < 20; i++) {
       await sleep(500);
       if (await ping()) { alive = true; break; }
     }
   }
 
-  // Send the event
+  // 发送事件
   if (alive) {
     await sendEvent(body);
   }
 
-  // Note: Monitor now stays running and manages its own idle timeout
-  // Removed auto-shutdown on Stop event to keep tray icon available
+  // 注意：监控器现在保持运行并管理自己的空闲超时
+  // 移除了 Stop 事件上的自动关闭功能以保持托盘图标可用
 
   process.exit(0);
 }
 
-// Safety timeout
+// 安全超时
 setTimeout(() => process.exit(0), 15000);
 
 main();

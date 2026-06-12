@@ -27,21 +27,21 @@ function hasOurHook(group) {
 }
 
 function main() {
-  console.log('Claude Code Monitor - Hook Setup\n');
-  console.log(`Settings file: ${SETTINGS_PATH}`);
-  console.log(`Hook script:   ${HOOK_SCRIPT}\n`);
+  console.log('Claude Code Monitor - Hook 配置\n');
+  console.log(`设置文件: ${SETTINGS_PATH}`);
+  console.log(`Hook 脚本: ${HOOK_SCRIPT}\n`);
 
   let settings = {};
   if (fs.existsSync(SETTINGS_PATH)) {
     try {
       settings = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8'));
-      console.log('Found existing settings.json');
+      console.log('找到已存在的 settings.json');
     } catch (e) {
-      console.error('Failed to parse settings.json:', e.message);
+      console.error('解析 settings.json 失败:', e.message);
       process.exit(1);
     }
   } else {
-    console.log('No existing settings.json, creating new one');
+    console.log('没有已存在的 settings.json，创建新文件');
     const dir = path.dirname(SETTINGS_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   }
@@ -51,19 +51,19 @@ function main() {
   for (const event of HOOK_EVENTS) {
     const existing = settings.hooks[event];
     if (Array.isArray(existing) && existing.some(hasOurHook)) {
-      console.log(`  [skip] ${event} - hook already configured`);
+      console.log(`  [跳过] ${event} - hook 已配置`);
     } else {
       if (!Array.isArray(settings.hooks[event])) {
         settings.hooks[event] = [];
       }
       settings.hooks[event].push(buildHookEntry(event));
-      console.log(`  [add]  ${event}`);
+      console.log(`  [添加]  ${event}`);
     }
   }
 
   fs.writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2), 'utf8');
-  console.log(`\nDone! Settings saved to ${SETTINGS_PATH}`);
-  console.log('Restart Claude Code for hooks to take effect.');
+  console.log(`\n完成！设置已保存到 ${SETTINGS_PATH}`);
+  console.log('重启 Claude Code 以使 hooks 生效。');
 }
 
 main();

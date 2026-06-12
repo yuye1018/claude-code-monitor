@@ -1,7 +1,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* Dark theme (default) */
+  /* 深色主题（默认） */
   --bg:            #1a1a2e;
   --surface:       #16213e;
   --primary:       #0f3460;
@@ -197,6 +197,13 @@ body {
 .event-notification .event-type  { color: var(--notif-text); }
 
 .event-time { font-size: 10px; color: var(--text-muted); }
+
+.event-session {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 2px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
 
 .event-detail {
   color: var(--text-muted);

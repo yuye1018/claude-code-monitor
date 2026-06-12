@@ -10,7 +10,7 @@ const { execFile } = require('child_process');
 
 const PORT = 3456;
 const MAX_EVENTS = 100;
-const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes idle → auto shutdown
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000; // 10分钟无活动 → 自动关闭
 let events = [];
 let mainWindow = null;
 let tray = null;
@@ -18,7 +18,7 @@ let expressServer = null;
 let lastEventTime = null;
 let idleTimer = null;
 
-// ── Express Server ────────────────────────────────────────
+// ── Express 服务器 ────────────────────────────────────────
 const server = express();
 server.use(express.json({ limit: '10mb' }));
 
@@ -55,38 +55,42 @@ server.post('/shutdown', (req, res) => {
   }, 500);
 });
 
-server.get('/ping', (req, res) => {
+  server.get('/ping', (req, res) => {
   res.json({ ok: true });
 });
 
-// ── Event Handling ────────────────────────────────────────
-const CONFIRM_DELAY_MS = 1500;
-let pendingConfirmTimer = null;
+// ── 事件处理 ────────────────────────────────────────
+// 使用 Notification 事件中的 permission_prompt 来检测 Claude 何时需要用户确认
+let windowShownForPermission = false;
 
 function handleEvent(event) {
   switch (event.type) {
     case 'PreToolUse':
-      // Delay notification — if PostToolUse comes quickly, it's auto-approved → cancel
-      if (pendingConfirmTimer) clearTimeout(pendingConfirmTimer);
-      const toolName = event.data?.tool_name || '未知';
-      pendingConfirmTimer = setTimeout(() => {
-        pendingConfirmTimer = null;
+      // 为新的工具使用重置状态
+      windowShownForPermission = false;
+      break;
+    case 'Notification':
+      // 检查这是否是 Claude 的权限提示
+      if (event.data?.notification_type === 'permission_prompt') {
+        windowShownForPermission = true;
         showWindow();
-        sendNotification('Claude Code 需要确认', `工具: ${toolName}`);
-      }, CONFIRM_DELAY_MS);
+        const toolName = event.data?.message || 'Claude Code 需要确认';
+        sendNotification('Claude Code 需要确认', toolName);
+      }
       break;
     case 'PostToolUse':
-      // Tool executed — if auto-approved, this fires fast → cancel the pending notification
-      if (pendingConfirmTimer) {
-        clearTimeout(pendingConfirmTimer);
-        pendingConfirmTimer = null;
+      // 工具已执行 - 如果窗口因权限提示显示，则隐藏
+      if (windowShownForPermission) {
+        windowShownForPermission = false;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          setTimeout(() => {
+            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.hide();
+          }, 300);
+        }
       }
       break;
     case 'Stop':
-      if (pendingConfirmTimer) {
-        clearTimeout(pendingConfirmTimer);
-        pendingConfirmTimer = null;
-      }
+      windowShownForPermission = false;
       showWindow();
       sendNotification('Claude Code 任务完成', '请查看终端获取详情');
       setTimeout(() => {
@@ -94,7 +98,8 @@ function handleEvent(event) {
       }, 8000);
       break;
     case 'Notification':
-      if (event.data?.message) {
+      // 常规通知（非权限提示）
+      if (event.data?.message && event.data?.notification_type !== 'permission_prompt') {
         sendNotification('Claude Code 通知', String(event.data.message));
       }
       break;
@@ -121,8 +126,8 @@ function sendNotification(title, body) {
   }
 }
 
-// ── Idle Auto-Shutdown ────────────────────────────────────
-// If no events for 10 minutes, Claude Code is gone → shut down
+// ── 空闲自动关闭 ────────────────────────────────────
+// 如果10分钟内没有事件，说明 Claude Code 已停止 → 关闭监控器
 function resetIdleTimer() {
   lastEventTime = Date.now();
   if (idleTimer) clearTimeout(idleTimer);
@@ -133,19 +138,19 @@ function autoShutdown() {
   if (!lastEventTime) return;
   const elapsed = Date.now() - lastEventTime;
   if (elapsed >= IDLE_TIMEOUT_MS - 1000) {
-    console.log('Idle timeout - Claude Code appears to have stopped. Shutting down.');
+    console.log('空闲超时 - Claude Code 似乎已停止。正在关闭监控器。');
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.destroy();
     app.quit();
   }
 }
 
-// ── Tray Icon ─────────────────────────────────────────────
+// ── 托盘图标 ─────────────────────────────────────────────
 function createTrayIcon() {
   const iconPath = path.join(__dirname, 'assets', 'tray-icon.png');
   return nativeImage.createFromPath(iconPath);
 }
 
-// ── Window ────────────────────────────────────────────────
+// ── 窗口 ────────────────────────────────────────────────
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 360,
@@ -191,7 +196,7 @@ function createTray() {
   tray.on('click', () => showWindow());
 }
 
-// ── IPC ───────────────────────────────────────────────────
+// ── IPC 通信 ───────────────────────────────────────────────────
 ipcMain.handle('get-events', () => events);
 ipcMain.handle('clear-events', () => { events = []; return true; });
 ipcMain.handle('hide-window', () => { if (mainWindow) mainWindow.hide(); });
@@ -213,7 +218,7 @@ ipcMain.handle('focus-terminal', (_, ppid) => {
   return true;
 });
 
-// ── App Lifecycle ─────────────────────────────────────────
+// ── 应用生命周期 ─────────────────────────────────────────
 app.whenReady().then(() => {
   createWindow();
   createTray();
@@ -239,7 +244,7 @@ app.on('before-quit', () => {
   if (expressServer) expressServer.close();
 });
 
-// ── Auto Hooks Setup ─────────────────────────────────────
+// ── 自动配置 Hooks ─────────────────────────────────────
 function setupHooksIfNeeded() {
   const marker = path.join(os.homedir(), '.claude-code-monitor-setup');
   if (fs.existsSync(marker)) return;

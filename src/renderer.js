@@ -16,6 +16,14 @@ function formatTime(iso) {
   });
 }
 
+// 从 session_id 生成简短的会话标识符
+function getSessionId(data) {
+  const sessionId = data?.session_id;
+  if (!sessionId) return '';
+  // 提取 session_id 的最后 8 个字符作为简短标识符
+  return sessionId.slice(-8);
+}
+
 function getDetail(data) {
   if (!data) return '';
   const input = data.tool_input || {};
@@ -41,6 +49,7 @@ function renderEvent(event) {
   const tool = event.data?.tool_name || '';
   const detail = getDetail(event.data);
   const ppid = event.data?._ppid;
+  const sessionId = getSessionId(event.data);
 
   const div = document.createElement('div');
   div.className = `event-item ${cssClass}`;
@@ -49,6 +58,7 @@ function renderEvent(event) {
       <span class="event-type">${label}${tool ? ' · ' + tool : ''}</span>
       <span class="event-time">${formatTime(event.timestamp)}</span>
     </div>
+    ${sessionId ? `<div class="event-session">会话: ${sessionId}</div>` : ''}
     ${detail ? `<div class="event-detail">${escapeHtml(detail)}</div>` : ''}
   `;
 
@@ -83,7 +93,7 @@ function clearAll() {
   statusText.textContent = '已清除 · 等待事件';
 }
 
-// ── Init ──────────────────────────────
+// ── 初始化 ──────────────────────────────
 async function init() {
   try {
     const history = await window.monitor.getEvents();
@@ -94,11 +104,11 @@ async function init() {
       eventCount = history.length;
       statusText.textContent = `已加载 ${eventCount} 个历史事件`;
     }
-  } catch { /* first launch, no history */ }
+  } catch { /* 首次启动，无历史记录 */ }
 
   window.monitor.onEvent(addEvent);
 
-  // Theme
+  // 主题
   document.documentElement.setAttribute('data-theme', await window.monitor.getTheme());
   window.monitor.onThemeChanged((theme) => {
     document.documentElement.setAttribute('data-theme', theme);

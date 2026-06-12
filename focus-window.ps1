@@ -20,31 +20,47 @@ function Focus-Window([IntPtr]$hWnd) {
     exit 0
 }
 
-# Strategy 1: Walk up from given PID to find a windowed process
+# 策略1：从给定的进程ID向上查找有窗口的进程
 if ($StartPid -gt 0) {
     $currentPid = $StartPid
     $visited = @{}
-    while ($currentPid -gt 0 -and -not $visited.ContainsKey($currentPid)) {
+    $maxIterations = 20  # 防止无限循环
+    $iterations = 0
+
+    while ($currentPid -gt 0 -and $iterations -lt $maxIterations -and -not $visited.ContainsKey($currentPid)) {
         $visited[$currentPid] = $true
+        $iterations++
         try {
             $proc = Get-Process -Id $currentPid -ErrorAction Stop
+            # 检查此进程是否有主窗口
             if ($proc.MainWindowHandle -ne [IntPtr]::Zero) {
                 Focus-Window $proc.MainWindowHandle
             }
+            # 向上查找父进程
             $wmiProc = Get-CimInstance Win32_Process -Filter "ProcessId=$currentPid" -ErrorAction SilentlyContinue
-            if ($wmiProc) { $currentPid = $wmiProc.ParentProcessId } else { break }
+            if ($wmiProc) {
+                $currentPid = $wmiProc.ParentProcessId
+            } else {
+                break
+            }
         } catch {
             break
         }
     }
 }
 
-# Strategy 2: Find terminal by process name (fallback)
+# 策略2：按进程名查找终端（回退方案 - 仅在策略1失败时使用）
+# 注意：此方法准确性较低，可能会选择错误的终端
 $terminals = @('WindowsTerminal', 'mintty', 'ConEmu64', 'ConEmu')
 foreach ($name in $terminals) {
-    $proc = Get-Process $name -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($proc -and $proc.MainWindowHandle -ne [IntPtr]::Zero) {
-        Focus-Window $proc.MainWindowHandle
+    $procs = Get-Process $name -ErrorAction SilentlyContinue
+    if ($procs) {
+        # Try to find the most recently active terminal
+        foreach ($proc in $procs) {
+            if ($proc.MainWindowHandle -ne [IntPtr]::Zero) {
+                Focus-Window $proc.MainWindowHandle
+            }
+        }
     }
 }
 
